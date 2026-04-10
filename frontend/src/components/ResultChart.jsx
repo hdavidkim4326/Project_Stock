@@ -177,6 +177,63 @@ const ZOOM_OPTIONS = [
 
 /* ── Range Summary (for brush-selected period) ────────────────────────────── */
 
+function RangeMddCell({ mdd, mddDetail, fmtFn }) {
+  const [hover, setHover] = useState(false);
+  const d = mddDetail;
+
+  return (
+    <div
+      className="relative"
+      onMouseEnter={() => setHover(true)}
+      onMouseLeave={() => setHover(false)}
+    >
+      <p className="text-[10px] text-gray-400">기간 MDD</p>
+      <p className="text-base font-bold tracking-tight text-[#F04452] cursor-default inline-flex items-center gap-1">
+        {mdd}%
+        {d && (
+          <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" className="text-gray-300">
+            <circle cx="12" cy="12" r="10" />
+            <path strokeLinecap="round" d="M12 16v-4m0-4h.01" />
+          </svg>
+        )}
+      </p>
+      {hover && d && (
+        <div className="absolute z-20 top-full left-0 mt-1.5 w-48 bg-white rounded-xl shadow-lg border border-gray-100 p-3 pointer-events-none">
+          <div className="flex items-center gap-1.5 mb-2">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#F04452" strokeWidth="2.5">
+              <path strokeLinecap="round" strokeLinejoin="round" d="M13 17h8m0 0V9m0 8l-8-8-4 4-6-6" />
+            </svg>
+            <span className="text-[11px] font-bold text-gray-700">구간 최대 낙폭</span>
+          </div>
+          <div className="space-y-1.5 text-[11px]">
+            <div className="flex justify-between">
+              <span className="text-gray-400">고점</span>
+              <span className="font-semibold text-gray-700">
+                {d.peakDate.slice(0, 7)} · {fmtFn(d.peakValue)}
+              </span>
+            </div>
+            <div className="flex justify-between">
+              <span className="text-gray-400">저점</span>
+              <span className="font-semibold text-[#F04452]">
+                {d.troughDate.slice(0, 7)} · {fmtFn(d.troughValue)}
+              </span>
+            </div>
+            <div className="border-t border-gray-100 pt-1.5 flex justify-between">
+              <span className="text-gray-400">하락 기간</span>
+              <span className="font-semibold text-gray-700">
+                {(() => {
+                  const a = new Date(d.peakDate), b = new Date(d.troughDate);
+                  return (b.getFullYear() - a.getFullYear()) * 12 + (b.getMonth() - a.getMonth());
+                })()}개월
+              </span>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
 function RangeSummary({ summaries, fmtFn }) {
   return (
     <div className={`grid gap-3 ${summaries.length === 1 ? "grid-cols-1" : "grid-cols-1 sm:grid-cols-2"}`}>
@@ -202,10 +259,7 @@ function RangeSummary({ summaries, fmtFn }) {
                 {s.cagr >= 0 ? "+" : ""}{s.cagr}%
               </p>
             </div>
-            <div>
-              <p className="text-[10px] text-gray-400">기간 MDD</p>
-              <p className="text-base font-bold tracking-tight text-[#F04452]">{s.mdd}%</p>
-            </div>
+            <RangeMddCell mdd={s.mdd} mddDetail={s.mddDetail} fmtFn={fmtFn} />
             <div>
               <p className="text-[10px] text-gray-400">자산 변화</p>
               <p className={`text-sm font-semibold ${s.valueChange >= 0 ? "text-[#30B780]" : "text-[#F04452]"}`}>
@@ -324,20 +378,28 @@ function ExpandedModal({
       const cagr = startVal > 0 && endVal > 0 && years > 0
         ? Math.round(((endVal / startVal) ** (1 / years) - 1) * 10000) / 100 : 0;
 
-      let peak = -Infinity, mddVal = 0;
+      let peak = -Infinity, peakIdx = si, mddVal = 0, mddPeakIdx = si, mddTroughIdx = si;
       for (let i = si; i <= ei; i++) {
         const v = mergedData[i][k.valueKey] || 0;
-        if (v > peak) peak = v;
+        if (v > peak) { peak = v; peakIdx = i; }
         if (peak > 0) {
           const dd = (v - peak) / peak;
-          if (dd < mddVal) mddVal = dd;
+          if (dd < mddVal) { mddVal = dd; mddPeakIdx = peakIdx; mddTroughIdx = i; }
         }
       }
+
+      const mdd = Math.round(mddVal * 10000) / 100;
+      const mddDetail = mdd < 0 ? {
+        peakDate: mergedData[mddPeakIdx]?.date,
+        troughDate: mergedData[mddTroughIdx]?.date,
+        peakValue: mergedData[mddPeakIdx]?.[k.valueKey] || 0,
+        troughValue: mergedData[mddTroughIdx]?.[k.valueKey] || 0,
+      } : null;
 
       return {
         id: k.id, name: k.name, color: k.color, strategy: k.strategy,
         months, newInvested, valueChange, profit,
-        totalReturn, cagr, mdd: Math.round(mddVal * 10000) / 100,
+        totalReturn, cagr, mdd, mddDetail,
       };
     });
 
