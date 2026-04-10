@@ -21,7 +21,7 @@ let nextId = 1;
 function getDefaultDates() {
   const end = new Date();
   const start = new Date();
-  start.setFullYear(end.getFullYear() - 5);
+  start.setFullYear(end.getFullYear() - 20);
   const fmt = (d) => d.toISOString().slice(0, 10);
   return { startDate: fmt(start), endDate: fmt(end) };
 }
