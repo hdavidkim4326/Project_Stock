@@ -237,7 +237,7 @@ export default function PortfolioForm({ portfolio, setPortfolio, interactive }) 
               <span className="text-[10px] text-gray-400">%</span>
               <button
                 onClick={() => removeTicker(item.ticker)}
-                className="w-5 h-5 rounded flex items-center justify-center text-gray-300 hover:bg-red-50 hover:text-[#F04452] opacity-0 group-hover:opacity-100 transition-all"
+                className="w-6 h-6 sm:w-5 sm:h-5 rounded flex items-center justify-center text-gray-300 hover:bg-red-50 hover:text-[#F04452] opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-all"
               >
                 <svg width="10" height="10" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="3">
                   <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
@@ -252,7 +252,7 @@ export default function PortfolioForm({ portfolio, setPortfolio, interactive }) 
                 step={1}
                 value={item.weight}
                 onChange={(e) => updateWeight(item.ticker, parseInt(e.target.value))}
-                className="w-full h-1.5 rounded-full appearance-none cursor-pointer accent-[#3182F6] bg-gray-100"
+                className="w-full h-2 sm:h-1.5 rounded-full appearance-none cursor-pointer accent-[#3182F6] bg-gray-100"
               />
             )}
           </div>

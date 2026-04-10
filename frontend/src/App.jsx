@@ -134,10 +134,10 @@ export default function App() {
         setExchangeRate={setExchangeRate}
       />
 
-      <div className="flex-1 flex overflow-hidden">
+      <div className="flex-1 flex flex-col lg:flex-row overflow-y-auto lg:overflow-hidden">
         {/* ── Left Sidebar ── */}
-        <aside className="w-[380px] shrink-0 border-r border-gray-100 bg-white overflow-y-auto">
-          <div className="p-5 space-y-4">
+        <aside className="w-full lg:w-[380px] shrink-0 border-b lg:border-b-0 lg:border-r border-gray-100 bg-white lg:overflow-y-auto">
+          <div className="p-4 lg:p-5 space-y-4">
             <PortfolioForm
               portfolio={portfolio}
               setPortfolio={setPortfolio}
@@ -167,8 +167,8 @@ export default function App() {
         </aside>
 
         {/* ── Main Content ── */}
-        <main className="flex-1 overflow-y-auto">
-          <div className="p-6 space-y-4 max-w-[1100px]">
+        <main className="flex-1 lg:overflow-y-auto">
+          <div className="p-4 lg:p-6 space-y-4 max-w-[1100px]">
             {error && (
               <div className="bg-red-50 border border-red-100 rounded-2xl px-4 py-3">
                 <p className="text-sm text-[#F04452] font-medium">{error}</p>
@@ -199,7 +199,7 @@ export default function App() {
                 />
               </>
             ) : (
-              <div className="flex items-center justify-center h-[calc(100vh-180px)]">
+              <div className="flex items-center justify-center h-48 lg:h-[calc(100vh-180px)]">
                 <div className="text-center">
                   <div className="w-16 h-16 rounded-2xl bg-gray-100 flex items-center justify-center mx-auto mb-4">
                     <svg width="28" height="28" fill="none" viewBox="0 0 24 24" stroke="#D1D5DB" strokeWidth="1.5">
@@ -207,7 +207,7 @@ export default function App() {
                     </svg>
                   </div>
                   <p className="text-sm font-semibold text-gray-300">
-                    왼쪽에서 포트폴리오를 설정하고
+                    포트폴리오를 설정하고
                   </p>
                   <p className="text-sm font-semibold text-gray-300 mt-1">
                     "데이터 로드" 를 누르세요

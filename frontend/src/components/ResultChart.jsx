@@ -135,11 +135,11 @@ function ExpandedModal({ onClose, mergedData, valueKeys, showInvested, datasets,
       onClick={(e) => e.target === e.currentTarget && onClose()}
       className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm"
     >
-      <div className="bg-white rounded-3xl shadow-2xl w-[95vw] h-[90vh] flex flex-col overflow-hidden">
-        <div className="flex items-center justify-between px-6 pt-5 pb-3 border-b border-gray-100">
+      <div className="bg-white rounded-none sm:rounded-3xl shadow-2xl w-full h-full sm:w-[95vw] sm:h-[90vh] flex flex-col overflow-hidden">
+        <div className="flex items-center justify-between px-4 sm:px-6 pt-4 sm:pt-5 pb-3 border-b border-gray-100">
           <div>
-            <h2 className="text-base font-bold text-gray-900">자산 성장 추이 — 확대 보기</h2>
-            <p className="text-xs text-gray-400 mt-0.5">
+            <h2 className="text-sm sm:text-base font-bold text-gray-900">자산 성장 추이 — 확대 보기</h2>
+            <p className="text-[10px] sm:text-xs text-gray-400 mt-0.5">
               하단 브러시를 드래그해서 기간을 선택하세요
               {datasets.length > 1 ? ` · ${datasets.length}개 포트폴리오 비교` : ""}
             </p>
@@ -153,7 +153,7 @@ function ExpandedModal({ onClose, mergedData, valueKeys, showInvested, datasets,
             </svg>
           </button>
         </div>
-        <div className="flex-1 p-6">
+        <div className="flex-1 p-3 sm:p-6">
           <ChartContent
             mergedData={mergedData}
             valueKeys={valueKeys}
@@ -237,11 +237,11 @@ export default function ResultChart({ savedPortfolios, unsavedResult, fx = 1, cu
 
   return (
     <>
-      <div className="bg-white rounded-2xl p-5 shadow-sm border border-gray-100">
-        <div className="flex items-center justify-between mb-4">
+      <div className="bg-white rounded-2xl p-3 sm:p-5 shadow-sm border border-gray-100">
+        <div className="flex items-center justify-between mb-3 sm:mb-4">
           <div>
-            <h2 className="text-base font-bold text-gray-900">자산 성장 추이</h2>
-            <p className="text-xs text-gray-400 mt-0.5">
+            <h2 className="text-sm sm:text-base font-bold text-gray-900">자산 성장 추이</h2>
+            <p className="text-[10px] sm:text-xs text-gray-400 mt-0.5">
               {datasets.length > 1
                 ? `${datasets.length}개 포트폴리오 비교`
                 : datasets[0]?.name}
@@ -254,14 +254,14 @@ export default function ResultChart({ savedPortfolios, unsavedResult, fx = 1, cu
             <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
               <path strokeLinecap="round" strokeLinejoin="round" d="M4 8V4m0 0h4M4 4l5 5m11-1V4m0 0h-4m4 0l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5v-4m0 4h-4m4 0l-5-5" />
             </svg>
-            확대 보기
+            <span className="hidden sm:inline">확대 보기</span>
           </button>
         </div>
         <ChartContent
           mergedData={mergedData}
           valueKeys={valueKeys}
           showInvested={showInvested}
-          height={320}
+          height={240}
           showBrush={false}
           fmtFn={fmtFn}
         />

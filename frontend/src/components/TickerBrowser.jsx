@@ -41,7 +41,7 @@ export default function TickerBrowser({ open, onClose, onSelect, existingTickers
       onClick={(e) => e.target === overlayRef.current && onClose()}
       className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm"
     >
-      <div className="bg-white rounded-3xl shadow-2xl w-[680px] max-h-[85vh] flex flex-col overflow-hidden">
+      <div className="bg-white rounded-none sm:rounded-3xl shadow-2xl w-full h-full sm:w-[680px] sm:h-auto sm:max-h-[85vh] flex flex-col overflow-hidden">
         {/* Header */}
         <div className="shrink-0 px-6 pt-5 pb-0 border-b border-gray-100">
           <div className="flex items-center justify-between mb-4">

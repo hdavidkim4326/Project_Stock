@@ -17,24 +17,24 @@ export default function Header({ currency, setCurrency, exchangeRate, setExchang
 
   return (
     <header className="sticky top-0 z-40 bg-white/80 backdrop-blur-lg border-b border-gray-100">
-      <div className="px-6 h-14 flex items-center justify-between">
-        <div className="flex items-center gap-3">
-          <div className="w-8 h-8 rounded-xl bg-[#3182F6] flex items-center justify-center">
-            <svg width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="white" strokeWidth="2.5">
+      <div className="px-3 sm:px-6 h-12 sm:h-14 flex items-center justify-between">
+        <div className="flex items-center gap-2 sm:gap-3">
+          <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-xl bg-[#3182F6] flex items-center justify-center">
+            <svg width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="white" strokeWidth="2.5">
               <path strokeLinecap="round" strokeLinejoin="round" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" />
             </svg>
           </div>
-          <h1 className="text-lg font-bold tracking-tight text-gray-900">
+          <h1 className="text-sm sm:text-lg font-bold tracking-tight text-gray-900">
             투자 백테스터
           </h1>
         </div>
 
         {/* Currency toggle */}
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-1.5 sm:gap-2">
           <div className="flex items-center bg-gray-100 rounded-lg p-0.5">
             <button
               onClick={() => setCurrency("USD")}
-              className={`px-3 py-1.5 rounded-md text-[12px] font-semibold transition-all ${
+              className={`px-2 sm:px-3 py-1 sm:py-1.5 rounded-md text-[11px] sm:text-[12px] font-semibold transition-all ${
                 currency === "USD"
                   ? "bg-white text-gray-800 shadow-sm"
                   : "text-gray-400 hover:text-gray-600"
@@ -44,7 +44,7 @@ export default function Header({ currency, setCurrency, exchangeRate, setExchang
             </button>
             <button
               onClick={() => setCurrency("KRW")}
-              className={`px-3 py-1.5 rounded-md text-[12px] font-semibold transition-all ${
+              className={`px-2 sm:px-3 py-1 sm:py-1.5 rounded-md text-[11px] sm:text-[12px] font-semibold transition-all ${
                 currency === "KRW"
                   ? "bg-white text-gray-800 shadow-sm"
                   : "text-gray-400 hover:text-gray-600"
@@ -55,8 +55,8 @@ export default function Header({ currency, setCurrency, exchangeRate, setExchang
           </div>
 
           {currency === "KRW" && (
-            <div className="flex items-center gap-1 text-[11px] text-gray-400">
-              <span>1$ =</span>
+            <div className="flex items-center gap-1 text-[10px] sm:text-[11px] text-gray-400">
+              <span className="hidden sm:inline">1$ =</span>
               {editingRate ? (
                 <input
                   type="number"

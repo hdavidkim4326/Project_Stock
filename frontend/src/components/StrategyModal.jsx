@@ -272,7 +272,7 @@ export default function StrategyModal({ open, onClose }) {
 
   const modalClass = isFullscreen
     ? "bg-white w-screen h-screen flex flex-col"
-    : "bg-white rounded-3xl shadow-2xl w-[860px] max-h-[88vh] flex flex-col overflow-hidden";
+    : "bg-white rounded-none sm:rounded-3xl shadow-2xl w-full h-full sm:w-[860px] sm:h-auto sm:max-h-[88vh] flex flex-col overflow-hidden";
 
   return (
     <div

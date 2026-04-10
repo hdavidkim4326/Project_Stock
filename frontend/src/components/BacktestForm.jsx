@@ -65,7 +65,7 @@ function SliderField({ label, value, onChange, min, max, step, prefix, suffix, d
         step={step}
         value={value}
         onChange={(e) => onChange(parseFloat(e.target.value))}
-        className="w-full h-1.5 rounded-full appearance-none cursor-pointer accent-[#3182F6] bg-gray-100"
+        className="w-full h-2 sm:h-1.5 rounded-full appearance-none cursor-pointer accent-[#3182F6] bg-gray-100"
       />
     </div>
   );
@@ -166,7 +166,7 @@ export default function BacktestForm({
           <button
             onClick={onLoadPrices}
             disabled={loading || !portfolioValid}
-            className={`w-full h-11 rounded-xl text-white font-semibold text-sm transition-all active:scale-[0.98] ${
+            className={`w-full h-12 sm:h-11 rounded-xl text-white font-semibold text-sm transition-all active:scale-[0.98] ${
               loading || !portfolioValid
                 ? "bg-gray-200 text-gray-400 cursor-not-allowed"
                 : "bg-[#3182F6] hover:bg-[#2570DF] shadow-lg shadow-[#3182F6]/20"
@@ -237,14 +237,14 @@ export default function BacktestForm({
             <button
               onClick={onLoadPrices}
               disabled={loading}
-              className="flex-1 h-10 rounded-xl bg-gray-100 text-gray-500 text-xs font-semibold hover:bg-gray-200 transition-all active:scale-[0.98]"
+              className="flex-1 h-11 sm:h-10 rounded-xl bg-gray-100 text-gray-500 text-xs font-semibold hover:bg-gray-200 transition-all active:scale-[0.98]"
             >
               티커/기간 변경 후 다시 로드
             </button>
             {hasUnsaved && (
               <button
                 onClick={onSave}
-                className="h-10 px-4 rounded-xl border-2 border-[#3182F6] text-[#3182F6] font-semibold text-xs hover:bg-[#E8F3FF] transition-all active:scale-[0.98]"
+                className="h-11 sm:h-10 px-4 rounded-xl border-2 border-[#3182F6] text-[#3182F6] font-semibold text-xs hover:bg-[#E8F3FF] transition-all active:scale-[0.98]"
               >
                 저장
               </button>

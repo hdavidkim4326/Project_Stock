@@ -93,7 +93,7 @@ export default function SummaryCards({ savedPortfolios, unsavedResult, fx = 1, c
   if (!items.length) return null;
 
   return (
-    <div className={`grid gap-3 ${items.length === 1 ? "grid-cols-1" : "grid-cols-2"}`}>
+    <div className={`grid gap-3 ${items.length === 1 ? "grid-cols-1" : "grid-cols-1 sm:grid-cols-2"}`}>
       {items.map((item) => (
         <Card key={item.id} {...item} currency={currency} fx={fx} />
       ))}
