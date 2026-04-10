@@ -175,6 +175,60 @@ const ZOOM_OPTIONS = [
   { key: "1y", label: "1Y", months: 12 },
 ];
 
+/* ── Range Summary (for brush-selected period) ────────────────────────────── */
+
+function RangeSummary({ summaries, fmtFn }) {
+  return (
+    <div className={`grid gap-3 ${summaries.length === 1 ? "grid-cols-1" : "grid-cols-1 sm:grid-cols-2"}`}>
+      {summaries.map((s) => (
+        <div key={s.id} className="bg-white rounded-2xl p-4 shadow-sm border-2" style={{ borderColor: s.color + "40" }}>
+          <div className="flex items-center gap-2 mb-3">
+            <div className="w-2.5 h-2.5 rounded-full shrink-0" style={{ backgroundColor: s.color }} />
+            <p className="text-xs font-medium text-gray-500 truncate">{s.name}</p>
+            <span className="text-[10px] bg-[#E8F3FF] text-[#3182F6] font-semibold px-1.5 py-0.5 rounded ml-auto shrink-0">
+              선택 {s.months}개월
+            </span>
+          </div>
+          <div className="grid grid-cols-3 gap-x-3 gap-y-2">
+            <div>
+              <p className="text-[10px] text-gray-400">기간 수익률</p>
+              <p className={`text-base font-bold tracking-tight ${s.totalReturn >= 0 ? "text-[#30B780]" : "text-[#F04452]"}`}>
+                {s.totalReturn >= 0 ? "+" : ""}{s.totalReturn}%
+              </p>
+            </div>
+            <div>
+              <p className="text-[10px] text-gray-400">기간 CAGR</p>
+              <p className="text-sm font-semibold text-gray-600">
+                {s.cagr >= 0 ? "+" : ""}{s.cagr}%
+              </p>
+            </div>
+            <div>
+              <p className="text-[10px] text-gray-400">기간 MDD</p>
+              <p className="text-base font-bold tracking-tight text-[#F04452]">{s.mdd}%</p>
+            </div>
+            <div>
+              <p className="text-[10px] text-gray-400">자산 변화</p>
+              <p className={`text-sm font-semibold ${s.valueChange >= 0 ? "text-[#30B780]" : "text-[#F04452]"}`}>
+                {s.valueChange >= 0 ? "+" : "-"}{fmtFn(Math.abs(s.valueChange))}
+              </p>
+            </div>
+            <div>
+              <p className="text-[10px] text-gray-400">기간 투자액</p>
+              <p className="text-sm font-semibold text-gray-600">{fmtFn(s.newInvested)}</p>
+            </div>
+            <div>
+              <p className="text-[10px] text-gray-400">순수익</p>
+              <p className={`text-sm font-semibold ${s.profit >= 0 ? "text-[#30B780]" : "text-[#F04452]"}`}>
+                {s.profit >= 0 ? "+" : "-"}{fmtFn(Math.abs(s.profit))}
+              </p>
+            </div>
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+}
+
 /* ── Expanded Modal ───────────────────────────────────────────────────────── */
 
 function ExpandedModal({
@@ -191,6 +245,7 @@ function ExpandedModal({
 }) {
   const [zoom, setZoom] = useState("all");
   const scrollRef = useRef(null);
+  const [brushRange, setBrushRange] = useState(null);
 
   const total = mergedData.length;
   const selected = ZOOM_OPTIONS.find((z) => z.key === zoom);
@@ -199,12 +254,14 @@ function ExpandedModal({
   const widthPct = isZoomed ? `${(total / visibleMonths) * 100}%` : "100%";
 
   useEffect(() => {
+    setBrushRange(null);
+  }, [zoom]);
+
+  useEffect(() => {
     const el = scrollRef.current;
     if (!el) return;
     if (isZoomed) {
-      requestAnimationFrame(() => {
-        el.scrollLeft = el.scrollWidth;
-      });
+      requestAnimationFrame(() => { el.scrollLeft = el.scrollWidth; });
     } else {
       el.scrollLeft = 0;
     }
@@ -223,6 +280,72 @@ function ExpandedModal({
     return () => el.removeEventListener("wheel", handler);
   }, [isZoomed]);
 
+  const isFullRange = !brushRange ||
+    (brushRange.startIndex === 0 && brushRange.endIndex >= total - 1);
+
+  const { rebasedData, rangeSummaries, brushLabel } = useMemo(() => {
+    if (isFullRange || isZoomed) {
+      return { rebasedData: mergedData, rangeSummaries: null, brushLabel: null };
+    }
+
+    const si = brushRange.startIndex;
+    const ei = brushRange.endIndex;
+    const sliced = mergedData.slice(si, ei + 1);
+
+    const bases = {};
+    valueKeys.forEach((k) => {
+      bases[k.valueKey] = sliced[0]?.[k.valueKey] || 0;
+      bases[k.investedKey] = sliced[0]?.[k.investedKey] || 0;
+    });
+
+    const rebased = sliced.map((point, idx) => {
+      const p = { date: point.date };
+      valueKeys.forEach((k) => {
+        p[k.valueKey] = (point[k.valueKey] || 0) - bases[k.valueKey];
+        p[k.investedKey] = (point[k.investedKey] || 0) - bases[k.investedKey];
+        p[`monthlyInvest_${k.id}`] = point[`monthlyInvest_${k.id}`];
+        p[`monthIdx_${k.id}`] = idx + 1;
+      });
+      return p;
+    });
+
+    const summaries = valueKeys.map((k) => {
+      const startVal = mergedData[si][k.valueKey] || 0;
+      const endVal = mergedData[ei][k.valueKey] || 0;
+      const startInv = mergedData[si][k.investedKey] || 0;
+      const endInv = mergedData[ei][k.investedKey] || 0;
+      const months = ei - si + 1;
+      const newInvested = endInv - startInv;
+      const valueChange = endVal - startVal;
+      const profit = valueChange - newInvested;
+      const totalReturn = startVal > 0
+        ? Math.round(((endVal / startVal) - 1) * 10000) / 100 : 0;
+      const years = months / 12;
+      const cagr = startVal > 0 && endVal > 0 && years > 0
+        ? Math.round(((endVal / startVal) ** (1 / years) - 1) * 10000) / 100 : 0;
+
+      let peak = -Infinity, mddVal = 0;
+      for (let i = si; i <= ei; i++) {
+        const v = mergedData[i][k.valueKey] || 0;
+        if (v > peak) peak = v;
+        if (peak > 0) {
+          const dd = (v - peak) / peak;
+          if (dd < mddVal) mddVal = dd;
+        }
+      }
+
+      return {
+        id: k.id, name: k.name, color: k.color, strategy: k.strategy,
+        months, newInvested, valueChange, profit,
+        totalReturn, cagr, mdd: Math.round(mddVal * 10000) / 100,
+      };
+    });
+
+    const label = `${mergedData[si]?.date?.slice(0, 7)} – ${mergedData[ei]?.date?.slice(0, 7)} (${ei - si + 1}개월)`;
+
+    return { rebasedData: rebased, rangeSummaries: summaries, brushLabel: label };
+  }, [mergedData, brushRange, isFullRange, isZoomed, valueKeys]);
+
   return (
     <div
       onClick={(e) => e.target === e.currentTarget && onClose()}
@@ -235,7 +358,7 @@ function ExpandedModal({
             <h2 className="text-sm sm:text-base font-bold text-gray-900">
               자산 성장 추이 — 확대 보기
             </h2>
-            <div className="flex items-center gap-3 mt-2">
+            <div className="flex items-center gap-3 mt-2 flex-wrap">
               <div className="flex items-center bg-gray-100 rounded-lg p-0.5 gap-0.5">
                 {ZOOM_OPTIONS.map((z) => {
                   const tooWide = z.months && z.months >= total;
@@ -262,9 +385,14 @@ function ExpandedModal({
                   ← 스크롤하여 기간 이동
                 </span>
               )}
-              {!isZoomed && (
+              {!isZoomed && !brushLabel && (
                 <span className="text-[10px] text-gray-400 hidden sm:inline">
-                  하단 브러시로 기간 선택{datasets.length > 1 ? ` · ${datasets.length}개 비교` : ""}
+                  하단 브러시로 구간 선택 · 0 기준 재계산
+                </span>
+              )}
+              {brushLabel && (
+                <span className="text-[11px] font-semibold text-[#3182F6] hidden sm:inline">
+                  {brushLabel}
                 </span>
               )}
             </div>
@@ -279,35 +407,83 @@ function ExpandedModal({
           </button>
         </div>
 
-        {/* Chart with horizontal scroll */}
-        <div className="flex-1 min-h-0 px-3 sm:px-6 pt-3 pb-1">
-          <div
-            ref={scrollRef}
-            className="h-full overflow-x-auto overscroll-x-contain"
-            style={{ scrollbarWidth: "thin", scrollbarColor: "#D1D5DB transparent" }}
-          >
-            <div style={{ width: widthPct, height: "100%", minWidth: "100%" }}>
+        {/* Chart area */}
+        {!isZoomed ? (
+          <div className="flex-1 min-h-0 flex flex-col px-3 sm:px-6 pt-3 pb-1">
+            {/* Main chart (rebased when brush active) */}
+            <div className="flex-1 min-h-0">
               <ResponsiveContainer width="100%" height="100%">
                 <ChartCore
-                  mergedData={mergedData}
+                  mergedData={isFullRange ? mergedData : rebasedData}
                   valueKeys={valueKeys}
                   showInvested={showInvested}
                   fmtFn={fmtFn}
-                  showBrush={!isZoomed}
                 />
               </ResponsiveContainer>
             </div>
+            {/* Navigator bar with Brush */}
+            <div className="h-[60px] shrink-0 mt-1">
+              <ResponsiveContainer width="100%" height="100%">
+                <AreaChart data={mergedData} margin={{ top: 5, right: 10, left: 65, bottom: 0 }}>
+                  {valueKeys.map((k) => (
+                    <Area
+                      key={k.id}
+                      type="monotone"
+                      dataKey={k.valueKey}
+                      stroke={k.color}
+                      strokeWidth={1}
+                      strokeOpacity={0.5}
+                      fill="none"
+                      dot={false}
+                      isAnimationActive={false}
+                    />
+                  ))}
+                  <Brush
+                    dataKey="date"
+                    height={30}
+                    stroke="#3182F6"
+                    fill="#F9FAFB"
+                    tickFormatter={(v) => v.slice(0, 7)}
+                    travellerWidth={10}
+                    onChange={setBrushRange}
+                  />
+                </AreaChart>
+              </ResponsiveContainer>
+            </div>
           </div>
-        </div>
+        ) : (
+          <div className="flex-1 min-h-0 px-3 sm:px-6 pt-3 pb-1">
+            <div
+              ref={scrollRef}
+              className="h-full overflow-x-auto overscroll-x-contain"
+              style={{ scrollbarWidth: "thin", scrollbarColor: "#D1D5DB transparent" }}
+            >
+              <div style={{ width: widthPct, height: "100%", minWidth: "100%" }}>
+                <ResponsiveContainer width="100%" height="100%">
+                  <ChartCore
+                    mergedData={mergedData}
+                    valueKeys={valueKeys}
+                    showInvested={showInvested}
+                    fmtFn={fmtFn}
+                  />
+                </ResponsiveContainer>
+              </div>
+            </div>
+          </div>
+        )}
 
-        {/* Summary cards */}
+        {/* Summary */}
         <div className="shrink-0 border-t border-gray-100 px-4 sm:px-6 py-3 overflow-y-auto max-h-[220px]">
-          <SummaryCards
-            savedPortfolios={savedPortfolios}
-            unsavedResult={unsavedResult}
-            fx={fx}
-            currency={currency}
-          />
+          {rangeSummaries ? (
+            <RangeSummary summaries={rangeSummaries} fmtFn={fmtFn} />
+          ) : (
+            <SummaryCards
+              savedPortfolios={savedPortfolios}
+              unsavedResult={unsavedResult}
+              fx={fx}
+              currency={currency}
+            />
+          )}
         </div>
       </div>
     </div>
