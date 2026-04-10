@@ -94,7 +94,7 @@ _http.headers.update({
 
 
 def _download_yahoo(ticker: str, start: str, end: str) -> pd.Series:
-    """Yahoo Finance v8 chart API에서 월별 종가를 가져온다. 실패 시 None 반환."""
+    """Yahoo Finance v8 chart API에서 종가를 가져온다. 실패 시 None 반환."""
     start_ts = int(datetime.strptime(start, "%Y-%m-%d").replace(tzinfo=timezone.utc).timestamp())
     end_ts = int(datetime.strptime(end, "%Y-%m-%d").replace(tzinfo=timezone.utc).timestamp())
 
@@ -133,7 +133,7 @@ def _download_yahoo(ticker: str, start: str, end: str) -> pd.Series:
 
         dates = pd.to_datetime(timestamps, unit="s", utc=True).tz_localize(None)
         series = pd.Series(closes, index=dates, name=ticker, dtype=float).dropna()
-        log.info(f"  {ticker}: {len(series)} monthly points loaded")
+        log.info(f"  {ticker}: {len(series)} points loaded")
         return series
 
     except Exception as e:
@@ -172,7 +172,7 @@ def _generate_synthetic(ticker: str, start: str, end: str) -> pd.Series:
 
 
 def _fetch_prices(tickers: list[str], start: str, end: str) -> pd.DataFrame:
-    """각 티커의 월별 종가를 가져온다. Yahoo 실패 시 합성 데이터로 대체."""
+    """각 티커의 종가를 가져온다. Yahoo 실패 시 합성 데이터로 대체."""
     log.info(f"Fetching prices: tickers={tickers}, {start} → {end}")
     used_synthetic = False
 
@@ -196,13 +196,14 @@ def _fetch_prices(tickers: list[str], start: str, end: str) -> pd.DataFrame:
         time.sleep(0.3)
 
     prices = pd.concat(series_list, axis=1)
-    monthly = prices.resample("MS").first().dropna()
-    log.info(f"Monthly prices: shape={monthly.shape}, synthetic={used_synthetic}")
+    resampled = prices.resample("MS").first().dropna()
 
-    if monthly.empty or len(monthly) < 2:
+    log.info(f"Prices: shape={resampled.shape}, synthetic={used_synthetic}")
+
+    if resampled.empty or len(resampled) < 2:
         raise HTTPException(status_code=400, detail="데이터가 부족합니다. 기간을 넓혀 주세요.")
 
-    return monthly
+    return resampled
 
 
 # ── Strategy engines ─────────────────────────────────────────────────────────
@@ -355,7 +356,7 @@ class PriceRequest(BaseModel):
 
 @app.post("/api/prices")
 def get_prices(req: PriceRequest):
-    """원시 월별 종가 반환. 프론트엔드에서 DCA/VA를 즉시 재계산할 수 있게 한다."""
+    """원시 종가 반환. 프론트엔드에서 DCA/VA를 즉시 재계산할 수 있게 한다."""
     tickers = [t.upper() for t in req.tickers]
     log.info(f"POST /api/prices  tickers={tickers}")
 

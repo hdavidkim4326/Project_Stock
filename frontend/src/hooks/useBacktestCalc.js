@@ -27,6 +27,7 @@ function runDCA(prices, weights, monthlyAmt, initialAmt) {
       date: row.date,
       invested: Math.round(totalInvested * 100) / 100,
       value: Math.round(value * 100) / 100,
+      monthlyInvest: Math.round(investNow * 100) / 100,
     });
   }
 
@@ -66,6 +67,7 @@ function runVA(prices, weights, monthlyAmt, initialAmt) {
       date: row.date,
       invested: Math.round(totalInvested * 100) / 100,
       value: Math.round(value * 100) / 100,
+      monthlyInvest: Math.round(investNow * 100) / 100,
     });
   }
 
@@ -73,17 +75,39 @@ function runVA(prices, weights, monthlyAmt, initialAmt) {
 }
 
 function calcMDD(records) {
-  if (records.length < 2) return 0;
-  let peak = -Infinity;
-  let maxDrawdown = 0;
+  if (records.length < 2) return { mdd: 0, detail: null };
 
-  for (const r of records) {
-    if (r.value > peak) peak = r.value;
-    const dd = (r.value - peak) / peak;
-    if (dd < maxDrawdown) maxDrawdown = dd;
+  let peak = -Infinity;
+  let peakIdx = 0;
+  let maxDrawdown = 0;
+  let mddPeakIdx = 0;
+  let mddTroughIdx = 0;
+
+  for (let i = 0; i < records.length; i++) {
+    if (records[i].value > peak) {
+      peak = records[i].value;
+      peakIdx = i;
+    }
+    const dd = (records[i].value - peak) / peak;
+    if (dd < maxDrawdown) {
+      maxDrawdown = dd;
+      mddPeakIdx = peakIdx;
+      mddTroughIdx = i;
+    }
   }
 
-  return Math.round(maxDrawdown * 10000) / 100;
+  const mdd = Math.round(maxDrawdown * 10000) / 100;
+  if (mdd === 0) return { mdd: 0, detail: null };
+
+  return {
+    mdd,
+    detail: {
+      peakDate: records[mddPeakIdx].date,
+      troughDate: records[mddTroughIdx].date,
+      peakValue: records[mddPeakIdx].value,
+      troughValue: records[mddTroughIdx].value,
+    },
+  };
 }
 
 function calcSummary(records) {
@@ -97,7 +121,7 @@ function calcSummary(records) {
   const cagr = last.invested > 0 && last.value > 0 && years > 0
     ? Math.round(((last.value / last.invested) ** (1 / years) - 1) * 10000) / 100
     : 0;
-  const mdd = calcMDD(records);
+  const { mdd, detail: mddDetail } = calcMDD(records);
 
   return {
     months,
@@ -106,6 +130,7 @@ function calcSummary(records) {
     returnPct,
     cagr,
     mdd,
+    mddDetail,
   };
 }
 
@@ -128,6 +153,7 @@ export default function useBacktestCalc(rawPrices, portfolio, config, strategy, 
     const monthlyRecords = records.map((r) => ({
       date: r.date,
       invested: r.invested,
+      monthlyInvest: r.monthlyInvest,
       portfolio_value_dca: strategy === "dca" ? r.value : r.invested,
       portfolio_value_va: strategy === "va" ? r.value : r.invested,
     }));
@@ -146,6 +172,7 @@ export default function useBacktestCalc(rawPrices, portfolio, config, strategy, 
         cagr_dca: strategy === "dca" ? summary.cagr : 0,
         cagr_va: strategy === "va" ? summary.cagr : 0,
         mdd: summary.mdd,
+        mddDetail: summary.mddDetail,
       },
     };
   }, [rawPrices, portfolio, config.monthlyInvestment, config.initialInvestment, strategy, startIdx]);

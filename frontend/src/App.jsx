@@ -80,9 +80,9 @@ export default function App() {
     return () => { cancelled = true; };
   }, []);
 
-  // Raw price data from backend (loaded once)
   const [rawPrices, setRawPrices] = useState(null);
   const [startIdx, setStartIdx] = useState(0);
+  const [lastFetchedAt, setLastFetchedAt] = useState(null);
 
   // Saved portfolios for comparison
   const [savedResults, setSavedResults] = useState([]);
@@ -105,6 +105,7 @@ export default function App() {
       });
       setRawPrices(data.prices);
       setStartIdx(0);
+      setLastFetchedAt(new Date());
     } catch (err) {
       const detail = err.response?.data?.detail;
       setError(typeof detail === "string" ? detail : "데이터 로드 중 오류가 발생했습니다.");
@@ -112,6 +113,28 @@ export default function App() {
       setLoading(false);
     }
   }, [portfolio, config.startDate, config.endDate]);
+
+  const refreshPrices = useCallback(async () => {
+    const today = new Date().toISOString().slice(0, 10);
+    setConfig((prev) => ({ ...prev, endDate: today }));
+    setLoading(true);
+    setError(null);
+    try {
+      const tickers = portfolio.map((p) => p.ticker);
+      const { data } = await axios.post(`${API_BASE}/api/prices`, {
+        tickers,
+        start_date: config.startDate,
+        end_date: today,
+      });
+      setRawPrices(data.prices);
+      setLastFetchedAt(new Date());
+    } catch (err) {
+      const detail = err.response?.data?.detail;
+      setError(typeof detail === "string" ? detail : "데이터 새로고침 중 오류가 발생했습니다.");
+    } finally {
+      setLoading(false);
+    }
+  }, [portfolio, config.startDate]);
 
   const saveResult = useCallback(() => {
     if (!liveResult) return;
@@ -151,6 +174,10 @@ export default function App() {
     ? { strategy, result: liveResult, color: liveColor, name: liveName }
     : null;
 
+  const dataRange = rawPrices && rawPrices.length > 0
+    ? { start: rawPrices[0].date.slice(0, 7), end: rawPrices[rawPrices.length - 1].date.slice(0, 7) }
+    : null;
+
   return (
     <div className="h-screen flex flex-col bg-gray-50 overflow-hidden">
       <Header
@@ -158,6 +185,10 @@ export default function App() {
         setCurrency={setCurrency}
         exchangeRate={exchangeRate}
         setExchangeRate={setExchangeRate}
+        dataRange={dataRange}
+        lastFetchedAt={lastFetchedAt}
+        onRefresh={refreshPrices}
+        refreshing={loading}
       />
 
       {backendStatus === "waking" && (

@@ -239,7 +239,7 @@ export default function BacktestForm({
               disabled={loading}
               className="flex-1 h-11 sm:h-10 rounded-xl bg-gray-100 text-gray-500 text-xs font-semibold hover:bg-gray-200 transition-all active:scale-[0.98]"
             >
-              티커/기간 변경 후 다시 로드
+              티커 · 기간 변경 후 다시 로드
             </button>
             {hasUnsaved && (
               <button

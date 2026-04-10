@@ -1,3 +1,5 @@
+import { useState } from "react";
+
 function fmtMoney(value, currency, fx) {
   const v = value * fx;
   if (currency === "KRW") {
@@ -16,6 +18,67 @@ function fmtMoney(value, currency, fx) {
   });
 }
 
+function monthDiff(dateA, dateB) {
+  const a = new Date(dateA);
+  const b = new Date(dateB);
+  return (b.getFullYear() - a.getFullYear()) * 12 + (b.getMonth() - a.getMonth());
+}
+
+function MddCell({ mdd, mddDetail, currency, fx }) {
+  const [hover, setHover] = useState(false);
+  const d = mddDetail;
+
+  return (
+    <div
+      className="relative"
+      onMouseEnter={() => setHover(true)}
+      onMouseLeave={() => setHover(false)}
+    >
+      <p className="text-[10px] text-gray-400">MDD</p>
+      <p className="text-base font-bold tracking-tight text-[#F04452] cursor-default inline-flex items-center gap-1">
+        {mdd}%
+        {d && (
+          <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" className="text-gray-300">
+            <circle cx="12" cy="12" r="10" />
+            <path strokeLinecap="round" d="M12 16v-4m0-4h.01" />
+          </svg>
+        )}
+      </p>
+
+      {hover && d && (
+        <div className="absolute z-20 top-full left-0 mt-1.5 w-48 bg-white rounded-xl shadow-lg border border-gray-100 p-3 pointer-events-none">
+          <div className="flex items-center gap-1.5 mb-2">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#F04452" strokeWidth="2.5">
+              <path strokeLinecap="round" strokeLinejoin="round" d="M13 17h8m0 0V9m0 8l-8-8-4 4-6-6" />
+            </svg>
+            <span className="text-[11px] font-bold text-gray-700">최대 낙폭 상세</span>
+          </div>
+          <div className="space-y-1.5 text-[11px]">
+            <div className="flex justify-between">
+              <span className="text-gray-400">고점</span>
+              <span className="font-semibold text-gray-700">
+                {d.peakDate.slice(0, 7)} · {fmtMoney(d.peakValue, currency, fx)}
+              </span>
+            </div>
+            <div className="flex justify-between">
+              <span className="text-gray-400">저점</span>
+              <span className="font-semibold text-[#F04452]">
+                {d.troughDate.slice(0, 7)} · {fmtMoney(d.troughValue, currency, fx)}
+              </span>
+            </div>
+            <div className="border-t border-gray-100 pt-1.5 flex justify-between">
+              <span className="text-gray-400">하락 기간</span>
+              <span className="font-semibold text-gray-700">
+                {monthDiff(d.peakDate, d.troughDate)}개월
+              </span>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
 function Card({ name, color, summary, strategy, currency, fx }) {
   const isVa = strategy === "va";
   const invested = isVa ? summary.total_invested_va : summary.total_invested_dca;
@@ -23,6 +86,7 @@ function Card({ name, color, summary, strategy, currency, fx }) {
   const returnPct = isVa ? summary.return_pct_va : summary.return_pct_dca;
   const cagr = isVa ? summary.cagr_va : summary.cagr_dca;
   const mdd = summary.mdd ?? 0;
+  const mddDetail = summary.mddDetail ?? null;
   const positive = returnPct >= 0;
 
   return (
@@ -44,12 +108,7 @@ function Card({ name, color, summary, strategy, currency, fx }) {
             {positive ? "+" : ""}{returnPct}%
           </p>
         </div>
-        <div>
-          <p className="text-[10px] text-gray-400">MDD</p>
-          <p className="text-base font-bold tracking-tight text-[#F04452]">
-            {mdd}%
-          </p>
-        </div>
+        <MddCell mdd={mdd} mddDetail={mddDetail} currency={currency} fx={fx} />
         <div>
           <p className="text-[10px] text-gray-400">투자 원금</p>
           <p className="text-sm font-semibold text-gray-600">{fmtMoney(invested, currency, fx)}</p>
