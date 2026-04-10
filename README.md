@@ -1,4 +1,4 @@
-# 📈 DCA & VA Investment Backtester
+# 📈 적립식 투자 백테스트를 위한 웹 서비스
 
 > **[한국어](#한국어) | [English](#english)**
 
