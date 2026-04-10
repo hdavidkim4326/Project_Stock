@@ -1,4 +1,4 @@
-import { useState, useCallback } from "react";
+import { useState, useCallback, useEffect, useRef } from "react";
 import axios from "axios";
 import Header from "./components/Header";
 import PortfolioForm from "./components/PortfolioForm";
@@ -9,6 +9,7 @@ import SummaryCards from "./components/SummaryCards";
 import useBacktestCalc from "./hooks/useBacktestCalc";
 
 const API_BASE = import.meta.env.VITE_API_BASE || "http://localhost:8003";
+const IS_PROD = API_BASE.includes("onrender.com");
 
 const COLORS = [
   "#3182F6", "#30B780", "#8B5CF6", "#F59E0B",
@@ -53,6 +54,31 @@ export default function App() {
   const [currency, setCurrency] = useState("USD");
   const [exchangeRate, setExchangeRate] = useState(1380);
   const fx = currency === "KRW" ? exchangeRate : 1;
+
+  const [backendStatus, setBackendStatus] = useState(IS_PROD ? "waking" : "ready");
+  const wakeAttempts = useRef(0);
+
+  useEffect(() => {
+    if (!IS_PROD) return;
+    let cancelled = false;
+
+    const ping = async () => {
+      try {
+        await axios.get(`${API_BASE}/api/health`, { timeout: 10000 });
+        if (!cancelled) setBackendStatus("ready");
+      } catch {
+        wakeAttempts.current += 1;
+        if (!cancelled && wakeAttempts.current < 12) {
+          setTimeout(ping, 5000);
+        } else if (!cancelled) {
+          setBackendStatus("failed");
+        }
+      }
+    };
+
+    ping();
+    return () => { cancelled = true; };
+  }, []);
 
   // Raw price data from backend (loaded once)
   const [rawPrices, setRawPrices] = useState(null);
@@ -133,6 +159,21 @@ export default function App() {
         exchangeRate={exchangeRate}
         setExchangeRate={setExchangeRate}
       />
+
+      {backendStatus === "waking" && (
+        <div className="bg-[#3182F6] text-white text-center py-2 px-4 text-xs font-medium flex items-center justify-center gap-2">
+          <svg className="animate-spin h-3.5 w-3.5" viewBox="0 0 24 24">
+            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />
+            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+          </svg>
+          서버를 깨우는 중입니다... 무료 서버라 최대 1분 정도 걸릴 수 있어요
+        </div>
+      )}
+      {backendStatus === "failed" && (
+        <div className="bg-[#F04452] text-white text-center py-2 px-4 text-xs font-medium">
+          서버에 연결할 수 없습니다. 잠시 후 새로고침해 주세요.
+        </div>
+      )}
 
       <div className="flex-1 flex flex-col lg:flex-row overflow-y-auto lg:overflow-hidden">
         {/* ── Left Sidebar ── */}
